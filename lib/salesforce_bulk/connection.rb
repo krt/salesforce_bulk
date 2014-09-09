@@ -5,7 +5,7 @@ module SalesforceBulk
     @@XML_HEADER = '<?xml version="1.0" encoding="utf-8" ?>'
     @@API_VERSION = nil
     @@LOGIN_HOST = 'login.salesforce.com'
-    @@INSTANCE_HOST = nil # Gets set in login()
+    @@INSTANCE_HOST = nil # Gets set in login
 
     def initialize(username, password, api_version, in_sandbox)
       @username = username
@@ -23,7 +23,7 @@ module SalesforceBulk
 
     #private
 
-    def login()
+    def login
 
       xml = '<?xml version="1.0" encoding="utf-8" ?>'
       xml += "<env:Envelope xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\""
@@ -36,7 +36,7 @@ module SalesforceBulk
       xml += "    </n1:login>"
       xml += "  </env:Body>"
       xml += "</env:Envelope>"
-      
+
       headers = Hash['Content-Type' => 'text/xml; charset=utf-8', 'SOAPAction' => 'login']
 
       response = post_xml(@@LOGIN_HOST, @@LOGIN_PATH, xml, headers)
@@ -80,27 +80,16 @@ module SalesforceBulk
       req
     end
 
-    def parse_instance()
-      @server_url =~ /https:\/\/([a-z]{2,2}[0-9]{1,2})(-api)?/
-      if $~.nil?
-        # Check for a "My Domain" subdomain
-        @server_url =~ /https:\/\/[a-zA-Z\-0-9]*.([a-z]{2,2}[0-9]{1,2})(-api)?/
-        if $~.nil?
-          raise "Unable to parse Salesforce instance from server url (#{@server_url})."
-        else
-          @instance = $~.captures[0]
-        end
-      else
-        @instance = $~.captures[0]
-      end
+    def parse_instance
+      @instance = @server_url.match(/:\/\/([a-zA-Z0-9\-\.]{2,}).salesforce/)[1]
     end
 
-    def parse_response response
+    def parse_response(response)
       response_parsed = XmlSimple.xml_in(response)
 
       if response.downcase.include?("faultstring") || response.downcase.include?("exceptionmessage")
         begin
-          
+
           if response.downcase.include?("faultstring")
             error_message = response_parsed["Body"][0]["Fault"][0]["faultstring"][0]
           elsif response.downcase.include?("exceptionmessage")
