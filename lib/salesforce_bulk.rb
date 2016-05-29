@@ -22,7 +22,7 @@ module SalesforceBulk
     def update(sobject, records, wait=false)
       self.do_operation('update', sobject, records, nil, wait)
     end
-    
+
     def create(sobject, records, wait=false)
       self.do_operation('insert', sobject, records, nil, wait)
     end
@@ -31,11 +31,11 @@ module SalesforceBulk
       self.do_operation('delete', sobject, records, nil, wait)
     end
 
-    def query(sobject, query)
-      self.do_operation('query', sobject, query, nil)
+    def query(sobject, query, save_to=nil)
+      self.do_operation('query', sobject, query, nil, false, save_to)
     end
 
-    def do_operation(operation, sobject, records, external_field, wait=false)
+    def do_operation(operation, sobject, records, external_field, wait=false, save_to=nil)
       job = SalesforceBulk::Job.new(operation, sobject, records, external_field, @connection)
 
       # TODO: put this in one function
@@ -55,9 +55,9 @@ module SalesforceBulk
           end
           sleep(2) # wait x seconds and check again
         end
-        
+
         if state == 'Completed'
-          job.get_batch_result()
+          job.get_batch_result(save_to)
           job
         else
           job.result.message = "There is an error in your job. The response returned a state of #{state}. Please check your query/parameters and try again."

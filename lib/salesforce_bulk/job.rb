@@ -54,7 +54,7 @@ module SalesforceBulk
     def add_query
       path = "job/#{@@job_id}/batch/"
       headers = Hash["Content-Type" => "text/csv; charset=UTF-8"]
-      
+
       response = @@connection.post_xml(nil, path, @@records, headers)
       response_parsed = XmlSimple.xml_in(response)
 
@@ -63,7 +63,7 @@ module SalesforceBulk
 
     def add_batch()
       keys = @@records.first.keys
-      
+
       output_csv = keys.to_csv
 
       @@records.each do |r|
@@ -78,7 +78,7 @@ module SalesforceBulk
 
       path = "job/#{@@job_id}/batch/"
       headers = Hash["Content-Type" => "text/csv; charset=UTF-8"]
-      
+
       response = @@connection.post_xml(nil, path, output_csv, headers)
       response_parsed = XmlSimple.xml_in(response)
 
@@ -102,7 +102,7 @@ module SalesforceBulk
       end
     end
 
-    def get_batch_result()
+    def get_batch_result(save_to)
       path = "job/#{@@job_id}/batch/#{@@batch_id}/result"
       headers = Hash["Content-Type" => "text/xml; charset=UTF-8"]
 
@@ -115,33 +115,44 @@ module SalesforceBulk
         path = "job/#{@@job_id}/batch/#{@@batch_id}/result/#{result_id}"
         headers = Hash.new
         headers = Hash["Content-Type" => "text/xml; charset=UTF-8"]
-        
+
         response = @@connection.get_request(nil, path, headers)
 
       end
 
-      parse_results response
+      parse_results(response, save_to)
 
       response = response.lines.to_a[1..-1].join
       # csvRows = CSV.parse(response, :headers => true)
     end
 
-    def parse_results response
+    def parse_results(response, save_to = nil)
+      response.force_encoding('utf-8')
       @result.success = true
-      @result.raw = response.lines.to_a[1..-1].join
-      csvRows = CSV.parse(response, :headers => true)
 
-      csvRows.each_with_index  do |row, index|
+      if save_to
+        IO.write(save_to, response)
+        return
+      end
+
+      @result.raw = response.lines.to_a[1..-1].join
+
+      csvRows = CSV.new(response, :headers => true)
+
+      index = 0
+      while row = csvRows.shift
         if @@operation != "query"
           row["Created"] = row["Created"] == "true" ? true : false
           row["Success"] = row["Success"] == "true" ? true : false
         end
 
         @result.records.push row
+
         if row["Success"] == false
-          @result.success = false 
+          @result.success = false
           @result.errors.push({"#{index}" => row["Error"]}) if row["Error"]
         end
+        index += 1
       end
 
       @result.message = "The job has been closed."
