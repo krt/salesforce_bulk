@@ -127,11 +127,10 @@ module SalesforceBulk
     end
 
     def parse_results(response, save_to = nil)
-      response.force_encoding('utf-8')
       @result.success = true
 
       if save_to
-        IO.write(save_to, response)
+        IO.binwrite(save_to, response)
         return
       end
 
