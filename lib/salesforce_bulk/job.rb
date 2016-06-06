@@ -102,7 +102,7 @@ module SalesforceBulk
       end
     end
 
-    def get_batch_result(save_to)
+    def get_batch_result(save_to=nil)
       path = "job/#{@@job_id}/batch/#{@@batch_id}/result"
       headers = Hash["Content-Type" => "text/xml; charset=UTF-8"]
 
