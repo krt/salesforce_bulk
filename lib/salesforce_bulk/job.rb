@@ -110,21 +110,22 @@ module SalesforceBulk
 
       if(@@operation == "query") # The query op requires us to do another request to get the results
         csv = ''
-        header = false
+        header_line_dumped = false
         response_parsed = XmlSimple.xml_in(response)
 
+        headers = Hash.new
+        headers = Hash["Content-Type" => "text/xml; charset=UTF-8"]
         response_parsed["result"].each do |result|
           path = "job/#{@@job_id}/batch/#{@@batch_id}/result/#{result}"
-          headers = Hash.new
-          headers = Hash["Content-Type" => "text/xml; charset=UTF-8"]
+
 
           response = @@connection.get_request(nil, path, headers)
-          unless header
+          unless header_line_dumped
             csv += response
           else
             csv += response.lines.to_a[1..-1].join
           end
-          header = true
+          header_line_dumped = true
         end
         response = csv
       end
