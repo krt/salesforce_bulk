@@ -7,12 +7,14 @@ module SalesforceBulk
     @@LOGIN_HOST = 'login.salesforce.com'
     @@INSTANCE_HOST = nil # Gets set in login
 
-    def initialize(username, password, api_version, in_sandbox)
+    def initialize(username, password, api_version, in_sandbox, proxy_addr, proxy_port)
       @username = username
       @password = password
       @session_id = nil
       @server_url = nil
       @instance = nil
+      @proxy_addr = proxy_addr
+      @proxy_port = proxy_port
       @@API_VERSION = api_version
       @@LOGIN_PATH = "/services/Soap/u/#{@@API_VERSION}"
       @@PATH_PREFIX = "/services/async/#{@@API_VERSION}/"
@@ -74,7 +76,15 @@ module SalesforceBulk
     end
 
     def https(host)
-      req = Net::HTTP.new(host, 443)
+      http_class =
+      case
+      when @proxy_addr && @proxy_port
+        Net::HTTP::Proxy(@proxy_addr, @proxy_port)
+      else
+        Net::HTTP
+      end
+
+      req = http_class.new(host, 443)
       req.use_ssl = true
       req.verify_mode = OpenSSL::SSL::VERIFY_NONE
       req
