@@ -79,7 +79,7 @@ module SalesforceBulk
       http_class =
       case
       when @proxy_addr && @proxy_port
-        Net::HTTP::Proxy(@proxy_addr, @proxy_port)
+        Net::HTTP::SOCKSProxy(@proxy_addr, @proxy_port)
       else
         Net::HTTP
       end
